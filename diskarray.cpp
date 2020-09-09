@@ -92,6 +92,7 @@ Diskarray::Diskarray(string md) : mdName(md), minDiskSize(UINT64_MAX)
                 continue;
             }
             sscanf(buffer, "%lu", &disksize);
+            disksize = disksize * 1024;
             if (this->minDiskSize > disksize) {
                 this->minDiskSize = disksize;
             }
@@ -217,6 +218,26 @@ fail:
 
 int Diskarray::GetDiskSectorRaid5(uint32_t sector, uint32_t *diskSector)
 {
+    uint32_t sectorsInChunk = 0;
+    uint32_t sectorsInStrip = 0;
+    uint32_t chunk = 0;
+    int disk = -1;
+
+    if (sector * SECTOR_SIZE > this->ArraySize) {
+        perror("Raid5, out of boundary\n");
+        goto fail;
+    }
+
+    sectorsInChunk = this->chunkSize / SECTOR_SIZE;
+    sectorsInStrip = sectorsInChunk * (this->Disks.size() - 1);
+
+    chunk = sector / sectorsInChunk;
+    disk = chunk % this->Disks.size();
+    *diskSector = sector % (sectorsInChunk) + sector / sectorsInStrip * sectorsInChunk;
+
+    return disk;
+fail:
+    return -1;
 }
 
 int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
