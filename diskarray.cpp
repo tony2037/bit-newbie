@@ -199,6 +199,20 @@ fail:
 
 int Diskarray::GetDiskSectorRaid1(uint32_t sector, uint32_t *diskSector)
 {
+    int disk = -1;
+    uint32_t sec = 0;
+
+    if (sector * SECTOR_SIZE > this->ArraySize) {
+        perror("Raid1, out of boundary\n");
+        goto fail;
+    }
+
+    disk = 0;
+    *diskSector = sector;
+    return disk;
+
+fail:
+    return -1;
 }
 
 int Diskarray::GetDiskSectorRaid5(uint32_t sector, uint32_t *diskSector)
