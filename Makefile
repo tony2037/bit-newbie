@@ -1,5 +1,6 @@
 CFLAGS = -g
 CXXFLAGS += $(CFLAGS)
+CXXFLAGS += -std=c++11
 
 BINS = synomdmapper
 SRCS = $(shell echo *.cpp)
