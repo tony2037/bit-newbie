@@ -19,7 +19,7 @@ public:
 private:
     string operation;
     string mdName, diskName;
-    int querySector;
+    uint32_t querySector;
     Diskarray diskarray;
 };
 

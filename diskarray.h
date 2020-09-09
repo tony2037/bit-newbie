@@ -13,18 +13,20 @@ using namespace std;
 #define SYSFS_MD_LEVEL_FORMAT "/sys/block/%s/md/level"
 #define SYSFS_MD_DISK_OFFSET_FORMAT "/sys/block/%s/md/dev-%s/offset"
 #define SYSFS_MD_DISK_SIZE_FORMAT "/sys/block/%s/md/dev-%s/size"
+#define SYSFS_MD_DISK_SLOT_FORMAT "/sys/block/%s/md/dev-%s/slot"
 #define SYSFS_MD_SLAVE_FORMAT "/sys/block/%s/slaves/"
 
 #define SECTOR_SIZE 512
 
 class Disk {
 public:
-    Disk(string name, uint32_t offset);
+    Disk(string name, uint32_t offset, int slot);
     void PrintDisk();
 
-private:
+public:
     string name;
     uint32_t offset;
+    int slot;
 };
 
 class Diskarray {
@@ -41,7 +43,7 @@ public:
     int GetDiskSectorRaid5(uint32_t sector, uint32_t *diskSector);
     int GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector);
 
-private:
+public:
     string mdName;
     vector<Disk> Disks;
     uint32_t chunkSize;

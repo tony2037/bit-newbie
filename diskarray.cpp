@@ -55,11 +55,13 @@ Diskarray::Diskarray(string md) : mdName(md), minDiskSize(UINT64_MAX)
     struct dirent *ent = NULL;
     uint32_t offset = 0;
     uint64_t disksize = 0;
+    int slot = -1;
     char slavesPath[128] = {0};
     char buffer[32] = {0};
     FILE *File = NULL;
     char Path[128] = {0};
     long FileSize = 0;
+    vector<Disk> _Disks;
     
     sprintf(slavesPath, SYSFS_MD_SLAVE_FORMAT, md.c_str());
     if ((dir = opendir (slavesPath)) != NULL) {
@@ -72,7 +74,16 @@ Diskarray::Diskarray(string md) : mdName(md), minDiskSize(UINT64_MAX)
                 continue;
             }
             sscanf(buffer, "%lu", &offset);
-            this->Disks.push_back(Disk(ent->d_name, offset));
+
+            memset(Path, 0, 128);
+            memset(buffer, 0, 32);
+            sprintf(Path, SYSFS_MD_DISK_SLOT_FORMAT, md.c_str(), ent->d_name);
+            if (parseFile(Path, buffer, 32) < 0) {
+                continue;
+            }
+            sscanf(buffer, "%d", &slot);
+
+            _Disks.push_back(Disk(ent->d_name, offset, slot));
 
             memset(Path, 0, 128);
             memset(buffer, 0, 32);
@@ -89,6 +100,11 @@ Diskarray::Diskarray(string md) : mdName(md), minDiskSize(UINT64_MAX)
     }
     else {
         perror("Open slaves directory, failed\n");
+    }
+
+    this->Disks = vector<Disk>(_Disks);
+    for (auto disk : _Disks) {
+        this->Disks[disk.slot] = disk;
     }
 
     memset(Path, 0, 128);
@@ -151,6 +167,23 @@ int Diskarray::GetDiskSector(uint32_t sector, uint32_t *diskSector)
 
 int Diskarray::GetDiskSectorLinear(uint32_t sector, uint32_t *diskSector)
 {
+    int disk = -1;
+    uint32_t sec = 0;
+    uint32_t sectorsInDisk = 0;
+
+    if (sector * SECTOR_SIZE > this->ArraySize) {
+        perror("Linear, out of boundary\n");
+        goto fail;
+    }
+
+    sectorsInDisk = this->minDiskSize / this->chunkSize * this->chunkSize / SECTOR_SIZE;
+    disk = sector / sectorsInDisk;
+    sec = sector % sectorsInDisk;
+    *diskSector = sec + this->Disks[disk].offset;
+    return disk;
+    
+fail:
+    return -1;
 }
 
 int Diskarray::GetDiskSectorRaid1(uint32_t sector, uint32_t *diskSector)
@@ -165,10 +198,10 @@ int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
 {
 }
 
-Disk::Disk(string name, uint32_t offset) : name(name), offset(offset)
+Disk::Disk(string name, uint32_t offset, int slot) : name(name), offset(offset), slot(slot)
 {}
 
 void Disk::PrintDisk()
 {
-    printf("Disk name: %s, Offset: %lu\n", this->name.c_str(), this->offset);
+    printf("[%d]:Disk name=%s; Offset=%lu\n", this->slot, this->name.c_str(), this->offset);
 }

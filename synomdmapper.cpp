@@ -14,7 +14,12 @@ Mapper::Mapper(string ops, string md, string disk, int qsector) : operation(ops)
 
 void Mapper::printMapping(void)
 {
+    int disk = -1;
+    uint32_t diskSector = 0;
     this->diskarray.PrintDiskarray();
+    disk = this->diskarray.GetDiskSector(this->querySector, &diskSector);
+    printf("(sector)[%s]:%lu = [%s]:%lu\n",
+            this->mdName.c_str(), this->querySector, this->diskarray.Disks[disk].name.c_str(), diskSector);
 }
 
 void Mapper::printReverseMapping(void)
@@ -25,7 +30,7 @@ int main(int argc, char *argv[])
 {
     string operation;
     string mdName, diskName;
-    int sector = -1;
+    uint32_t sector = 0;
 
     if (argc < 4) {
         printf("Usage:\n");
@@ -39,14 +44,14 @@ int main(int argc, char *argv[])
     operation = argv[1];
     if (operation == "m") {
         mdName = argv[2];
-        sscanf(argv[3], "%d", &sector);
+        sscanf(argv[3], "%lu", &sector);
         Mapper mapper = Mapper(operation, mdName, "", sector);
         mapper.printMapping();
     }
     else if (operation == "r") {
         mdName = argv[2];
         diskName = argv[3];
-        sscanf(argv[4], "%d", &sector);
+        sscanf(argv[4], "%lu", &sector);
         Mapper mapper = Mapper(operation, mdName, diskName, sector);
         mapper.printReverseMapping();
     }
@@ -56,7 +61,7 @@ int main(int argc, char *argv[])
     }
 
 end:
-    return 0;
+    exit(0);
 fail:
-    return -1;
+    exit(-1);
 }
