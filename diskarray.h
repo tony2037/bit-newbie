@@ -43,6 +43,12 @@ public:
     int GetDiskSectorRaid5(uint32_t sector, uint32_t *diskSector);
     int GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector);
 
+    Disk GetDiskFromName(string diskName);
+    uint64_t GetRaidSector(string diskName, uint32_t sector);
+    uint64_t GetRaidSectorLinear(Disk disk, uint64_t sector);
+    uint64_t GetRaidSectorRaid1(Disk disk, uint64_t sector);
+    uint64_t GetRaidSectorRaid5(Disk disk, uint64_t sector);
+    uint64_t GetRaidSectorRaid6(Disk disk, uint64_t sector);
 public:
     string mdName;
     vector<Disk> Disks;

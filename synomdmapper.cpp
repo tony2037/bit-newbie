@@ -24,12 +24,18 @@ void Mapper::printMapping(void)
 
 void Mapper::printReverseMapping(void)
 {
+    uint64_t raidSector = 0;
+    this->diskarray.PrintDiskarray();
+    raidSector = this->diskarray.GetRaidSector(this->diskName, this->querySector);
+    printf("(sector)[%s]:%lu = [%s]:%lu\n",
+            this->mdName.c_str(), raidSector, this->diskName.c_str(), this->querySector);
 }
 
 int main(int argc, char *argv[])
 {
     string operation;
-    string mdName, diskName;
+    string mdName;
+    string diskName;
     uint32_t sector = 0;
 
     if (argc < 4) {
@@ -50,9 +56,8 @@ int main(int argc, char *argv[])
     }
     else if (operation == "r") {
         mdName = argv[2];
-        diskName = argv[3];
         sscanf(argv[4], "%lu", &sector);
-        Mapper mapper = Mapper(operation, mdName, diskName, sector);
+        Mapper mapper = Mapper(operation, mdName, argv[3], sector);
         mapper.printReverseMapping();
     }
     else {

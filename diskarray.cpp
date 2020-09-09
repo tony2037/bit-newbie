@@ -244,6 +244,68 @@ int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
 {
 }
 
+Disk Diskarray::GetDiskFromName(string diskName)
+{
+    Disk queryDisk("", 0, 0);
+    for (auto disk : this->Disks) {
+        if (diskName == disk.name) {
+            queryDisk = disk;
+        }
+    }
+    return queryDisk;
+}
+
+uint64_t Diskarray::GetRaidSector(string diskName, uint32_t sector)
+{
+    uint64_t querySector = 0;
+    Disk queryDisk = Disk("", 0, 0);
+    uint64_t mdSector = 0;
+
+    queryDisk = this->GetDiskFromName(diskName);
+    querySector = sector - queryDisk.offset;
+
+    if (this->level == "linear") {
+        mdSector = this->GetRaidSectorLinear(queryDisk, querySector);
+    }
+    else if (this->level == "raid1") {
+        mdSector = this->GetRaidSectorRaid1(queryDisk, querySector);
+    }
+    else if (this->level == "raid5") {
+        mdSector = this->GetRaidSectorRaid5(queryDisk, querySector);
+    }
+    else if (this->level == "raid6") {
+        mdSector = this->GetRaidSectorRaid6(queryDisk, querySector);
+    }
+    else {
+        perror("Non-supported raid level\n");
+        goto fail;
+    }
+
+    return mdSector;
+fail:
+    return UINT64_MAX;
+}
+
+uint64_t Diskarray::GetRaidSectorLinear(Disk disk, uint64_t sector)
+{
+    uint64_t sectorsInDisk;
+
+    sectorsInDisk = this->minDiskSize / this->chunkSize * this->chunkSize / SECTOR_SIZE;
+    return disk.slot * sectorsInDisk + sector;
+}
+
+uint64_t Diskarray::GetRaidSectorRaid1(Disk disk, uint64_t sector)
+{
+}
+
+uint64_t Diskarray::GetRaidSectorRaid5(Disk disk, uint64_t sector)
+{
+}
+
+uint64_t Diskarray::GetRaidSectorRaid6(Disk disk, uint64_t sector)
+{
+}
+
 Disk::Disk(string name, uint32_t offset, int slot) : name(name), offset(offset), slot(slot)
 {}
 
