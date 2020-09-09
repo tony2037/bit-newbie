@@ -147,22 +147,33 @@ void Diskarray::PrintDiskarray(void)
 
 int Diskarray::GetDiskSector(uint32_t sector, uint32_t *diskSector)
 {
+    int disk = -1;
     if (this->level == "linear") {
-        return this->GetDiskSectorLinear(sector, diskSector);
+        disk = this->GetDiskSectorLinear(sector, diskSector);
     }
     else if (this->level == "raid1") {
-        return this->GetDiskSectorRaid1(sector, diskSector);
+        disk = this->GetDiskSectorRaid1(sector, diskSector);
     }
     else if (this->level == "raid5") {
-        return this->GetDiskSectorRaid5(sector, diskSector);
+        disk = this->GetDiskSectorRaid5(sector, diskSector);
     }
     else if (this->level == "raid6") {
-        return this->GetDiskSectorRaid6(sector, diskSector);
+        disk = this->GetDiskSectorRaid6(sector, diskSector);
     }
     else {
         perror("Non-supported raid level\n");
-        return -1;
+        goto fail;
     }
+
+    if (disk < 0) {
+        printf("[error]: %s\n", __FUNCTION__);
+        goto fail;
+    }
+    *diskSector = *diskSector + this->Disks[disk].offset;
+    return disk;
+
+fail:
+    return -1;
 }
 
 int Diskarray::GetDiskSectorLinear(uint32_t sector, uint32_t *diskSector)
@@ -179,7 +190,7 @@ int Diskarray::GetDiskSectorLinear(uint32_t sector, uint32_t *diskSector)
     sectorsInDisk = this->minDiskSize / this->chunkSize * this->chunkSize / SECTOR_SIZE;
     disk = sector / sectorsInDisk;
     sec = sector % sectorsInDisk;
-    *diskSector = sec + this->Disks[disk].offset;
+    *diskSector = sec;
     return disk;
     
 fail:
