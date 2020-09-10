@@ -247,6 +247,7 @@ int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
     uint64_t chunkOnMd = 0;
     uint64_t groupOnMd = 0;
     uint64_t offsetInChunk = 0;
+    uint64_t numInGroup = 0; // chunk
     uint64_t chunksInGroup = 0;
     uint64_t diskChunk = 0;
     uint64_t mod = 0, quotient = 0, threshold = 0;
@@ -260,13 +261,42 @@ int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
     chunkOnMd = sector / sectorsInChunk;
     offsetInChunk = sector % sectorsInChunk;
 
+    /*
+     * Firstly, figure out which group the chunk belonged to and the offset chunk in the Group
+     * groupOnMd and numInGroup seperately
+     * Secondly, see this in a disk view.
+     * Since the life span is the number of disks a cycle. This gives number of disks chunks a group.
+     *  this is why we got: this->Disks.size() * groupOnMd.
+     * Then, each strip contains number of disks - 2 chunks
+     *  this is why we got: numInGroup / (this->Disks.size() - 2)
+     * 
+     */
     groupOnMd = chunkOnMd / chunksInGroup;
-    chunkOnMd = chunkOnMd % chunksInGroup;
-    diskChunk = 2 * groupOnMd + chunkOnMd / (this->Disks.size() - 2);
+    numInGroup = chunkOnMd % chunksInGroup;
+    diskChunk = this->Disks.size() * groupOnMd + numInGroup / (this->Disks.size() - 2);
     *diskSector = diskChunk * sectorsInChunk;
 
-    mod = chunkOnMd % (this->Disks.size() - 1);
-    quotient = chunkOnMd / (this->Disks.size() - 1);
+    /*
+     * Example:
+     * layout:
+     * x  0  1  2  x
+     * 3  4  5  x  x
+     * 7  8  x  x  6
+     * 11 x  x  9  10
+     * x  x  12 13 14
+     *
+     * See this like:
+     *(-1)(2)(1)(0) <- threshold
+     *  x  0  1  2  (0)
+     *  3  4  5  6  (1)
+     *  7  8  9  10 (2)
+     *  11 12 13 14 (3)
+     *               ^
+     *             quotient
+     *
+     */
+    mod = numInGroup % (this->Disks.size() - 1);
+    quotient = numInGroup / (this->Disks.size() - 1);
     disk = (mod + 1) % (this->Disks.size() - 1);
     threshold = this->Disks.size() - 3 - mod;
     if (threshold >= 0 && quotient > threshold) {
@@ -356,7 +386,7 @@ uint64_t Diskarray::GetRaidSectorRaid5(Disk disk, uint64_t sector)
         perror("This is a parity chunk\n");
         goto fail;
     }
-    chunkOnMd = (chunkOnDisk - nParity) * this->Disks.size() + disk.slot;
+    chunkOnMd = (chunkOnDisk - nParity) * this->Disks.size() + disk.slot; // detail
     sectorOnMd = chunkOnMd * sectorsInChunk + offsetInChunk;
 
     return sectorOnMd;

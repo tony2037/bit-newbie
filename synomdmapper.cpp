@@ -17,7 +17,7 @@ void Mapper::printMapping(void)
     int disk = -1;
     uint32_t diskSector = 0;
     this->diskarray.PrintDiskarray();
-    disk = this->diskarray.GetDiskSector(this->querySector, &diskSector);
+    disk = this->diskarray.GetDiskSector(this->querySector, &diskSector); // Raid 1?
     printf("(sector)[%s]:%lu = [%s]:%lu\n",
             this->mdName.c_str(), this->querySector, this->diskarray.Disks[disk].name.c_str(), diskSector);
 }
