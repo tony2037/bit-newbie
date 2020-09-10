@@ -242,6 +242,40 @@ fail:
 
 int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
 {
+    int disk = -1;
+    uint64_t sectorsInChunk = 0;
+    uint64_t chunkOnMd = 0;
+    uint64_t groupOnMd = 0;
+    uint64_t offsetInChunk = 0;
+    uint64_t chunksInGroup = 0;
+    uint64_t diskChunk = 0;
+    uint64_t mod = 0, quotient = 0, threshold = 0;
+    if (sector * SECTOR_SIZE > this->ArraySize) {
+        perror("Raid5, out of boundary\n");
+        goto fail;
+    }
+
+    chunksInGroup = (this->Disks.size() - 2) * this->Disks.size();
+    sectorsInChunk = this->chunkSize / SECTOR_SIZE;
+    chunkOnMd = sector / sectorsInChunk;
+    offsetInChunk = sector % sectorsInChunk;
+
+    groupOnMd = chunkOnMd / chunksInGroup;
+    chunkOnMd = chunkOnMd % chunksInGroup;
+    diskChunk = 2 * groupOnMd + chunkOnMd / (this->Disks.size() - 2);
+    *diskSector = diskChunk * sectorsInChunk;
+
+    mod = chunkOnMd % (this->Disks.size() - 1);
+    quotient = chunkOnMd / (this->Disks.size() - 1);
+    disk = (mod + 1) % (this->Disks.size() - 1);
+    threshold = this->Disks.size() - 3 - mod;
+    if (threshold >= 0 && quotient > threshold) {
+        disk++;
+    }
+    return disk;
+
+fail:
+    return -1;
 }
 
 Disk Diskarray::GetDiskFromName(string diskName)
