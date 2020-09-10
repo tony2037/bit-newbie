@@ -367,6 +367,41 @@ fail:
 
 uint64_t Diskarray::GetRaidSectorRaid6(Disk disk, uint64_t sector)
 {
+    uint64_t sectorsInChunk = 0;
+    uint64_t chunksInGroup = 0;
+    uint64_t chunkOnDisk = 0;
+    uint64_t offsetInChunk = 0;
+    uint64_t group = 0;
+    uint64_t chunkOnMd = 0;
+    uint64_t offsetInGroup = 0;
+    uint64_t sectorOnMd = 0;
+    int pdisk = 0, qdisk = 0;
+
+    if (sector * SECTOR_SIZE > this->minDiskSize) {
+        perror("Raid 6 reverse mapping, out of boundary\n");
+        goto fail;
+    }
+
+    sectorsInChunk = this->chunkSize / SECTOR_SIZE;
+    chunksInGroup = (this->Disks.size() - 2) * this->Disks.size();
+    chunkOnDisk = sector / sectorsInChunk;
+    offsetInChunk = sector % sectorsInChunk;
+    group = chunkOnDisk / this->Disks.size();
+    chunkOnDisk = chunkOnDisk % this->Disks.size();
+
+    pdisk = (this->Disks.size() - 1) - chunkOnDisk;
+    qdisk = (pdisk + 1) % this->Disks.size();
+    if (pdisk == disk.slot || qdisk == disk.slot) {
+        perror("This is a parity chunk\n");
+        goto fail;
+    }
+    offsetInGroup = chunkOnDisk * (this->Disks.size() - 2) + (disk.slot + this->Disks.size() - qdisk - 1) % this->Disks.size();
+
+    chunkOnMd = group * chunksInGroup + offsetInGroup;
+    sectorOnMd = chunkOnMd * sectorsInChunk + offsetInChunk;
+    return sectorOnMd;
+fail:
+    return UINT64_MAX;
 }
 
 Disk::Disk(string name, uint32_t offset, int slot) : name(name), offset(offset), slot(slot)
