@@ -27,6 +27,9 @@ void Mapper::printReverseMapping(void)
     uint64_t raidSector = 0;
     this->diskarray.PrintDiskarray();
     raidSector = this->diskarray.GetRaidSector(this->diskName, this->querySector);
+    if (raidSector == UINT64_MAX) {
+        printf("Check the credity\n");
+    }
     printf("(sector)[%s]:%lu = [%s]:%lu\n",
             this->mdName.c_str(), raidSector, this->diskName.c_str(), this->querySector);
 }

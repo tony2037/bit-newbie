@@ -296,10 +296,39 @@ uint64_t Diskarray::GetRaidSectorLinear(Disk disk, uint64_t sector)
 
 uint64_t Diskarray::GetRaidSectorRaid1(Disk disk, uint64_t sector)
 {
+    return sector;
 }
 
 uint64_t Diskarray::GetRaidSectorRaid5(Disk disk, uint64_t sector)
 {
+    uint64_t chunkOnDisk = 0;
+    uint64_t offsetInChunk = 0;
+    uint64_t chunkOnMd = 0;
+    uint64_t sectorOnMd = 0;
+    int64_t nParity = 0;
+    uint64_t sectorsInChunk = 0;
+
+    sectorsInChunk = this->chunkSize / SECTOR_SIZE;
+    chunkOnDisk = sector / sectorsInChunk;
+    offsetInChunk = sector % sectorsInChunk;
+    nParity = chunkOnDisk - (this->Disks.size() - disk.slot - 1);
+    if (nParity > 0) {
+        nParity = nParity / this->Disks.size() + 1;
+    }
+    else if (nParity < 0) {
+        nParity = 0;
+    }
+    else {
+        perror("This is a parity chunk\n");
+        goto fail;
+    }
+    chunkOnMd = (chunkOnDisk - nParity) * this->Disks.size() + disk.slot;
+    sectorOnMd = chunkOnMd * sectorsInChunk + offsetInChunk;
+
+    return sectorOnMd;
+
+fail:
+    return UINT64_MAX;
 }
 
 uint64_t Diskarray::GetRaidSectorRaid6(Disk disk, uint64_t sector)
