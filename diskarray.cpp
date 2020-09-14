@@ -365,28 +365,33 @@ uint64_t Diskarray::GetRaidSectorRaid1(Disk disk, uint64_t sector)
 
 uint64_t Diskarray::GetRaidSectorRaid5(Disk disk, uint64_t sector)
 {
+    uint64_t sectorsInChunk = 0;
     uint64_t chunkOnDisk = 0;
     uint64_t offsetInChunk = 0;
+    uint64_t chunksInGroup = 0;
+    uint64_t group = 0;
+    uint64_t diskchunkInGroup = 0;
     uint64_t chunkOnMd = 0;
     uint64_t sectorOnMd = 0;
-    int64_t nParity = 0;
-    uint64_t sectorsInChunk = 0;
 
     sectorsInChunk = this->chunkSize / SECTOR_SIZE;
+    chunksInGroup = (this->Disks.size() - 1) * this->Disks.size();
+
     chunkOnDisk = sector / sectorsInChunk;
     offsetInChunk = sector % sectorsInChunk;
-    nParity = chunkOnDisk - (this->Disks.size() - disk.slot - 1);
-    if (nParity > 0) {
-        nParity = nParity / this->Disks.size() + 1;
-    }
-    else if (nParity < 0) {
-        nParity = 0;
-    }
-    else {
+    group = chunkOnDisk / this->Disks.size();
+    diskchunkInGroup = chunkOnDisk % this->Disks.size();
+
+    if (disk.slot + diskchunkInGroup == this->Disks.size() - 1) {
         perror("This is a parity chunk\n");
         goto fail;
     }
-    chunkOnMd = (chunkOnDisk - nParity) * this->Disks.size() + disk.slot; // detail
+    else if (disk.slot + diskchunkInGroup > this->Disks.size() - 1) {
+        chunkOnMd = group * chunksInGroup + (this->Disks.size() - 1) * (diskchunkInGroup - 1) + disk.slot;
+    }
+    else {
+        chunkOnMd = group * chunksInGroup + (this->Disks.size() - 1) * diskchunkInGroup + disk.slot;
+    }
     sectorOnMd = chunkOnMd * sectorsInChunk + offsetInChunk;
 
     return sectorOnMd;
