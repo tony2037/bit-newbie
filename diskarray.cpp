@@ -252,7 +252,7 @@ int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
     uint64_t diskChunk = 0;
     uint64_t mod = 0, quotient = 0, threshold = 0;
     if (sector * SECTOR_SIZE > this->ArraySize) {
-        perror("Raid5, out of boundary\n");
+        perror("Raid6, out of boundary\n");
         goto fail;
     }
 
@@ -387,10 +387,10 @@ uint64_t Diskarray::GetRaidSectorRaid5(Disk disk, uint64_t sector)
         goto fail;
     }
     else if (disk.slot + diskchunkInGroup > this->Disks.size() - 1) {
-        chunkOnMd = group * chunksInGroup + (this->Disks.size() - 1) * (diskchunkInGroup - 1) + disk.slot;
+        chunkOnMd = group * chunksInGroup + this->Disks.size() * (diskchunkInGroup - 1) + disk.slot;
     }
     else {
-        chunkOnMd = group * chunksInGroup + (this->Disks.size() - 1) * diskchunkInGroup + disk.slot;
+        chunkOnMd = group * chunksInGroup + this->Disks.size() * diskchunkInGroup + disk.slot;
     }
     sectorOnMd = chunkOnMd * sectorsInChunk + offsetInChunk;
 
