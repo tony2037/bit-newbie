@@ -274,7 +274,7 @@ int Diskarray::GetDiskSectorRaid6(uint32_t sector, uint32_t *diskSector)
     groupOnMd = chunkOnMd / chunksInGroup;
     numInGroup = chunkOnMd % chunksInGroup;
     diskChunk = this->Disks.size() * groupOnMd + numInGroup / (this->Disks.size() - 2);
-    *diskSector = diskChunk * sectorsInChunk;
+    *diskSector = diskChunk * sectorsInChunk + offsetInChunk;
 
     /*
      * Example:
